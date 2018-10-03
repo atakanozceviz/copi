@@ -76,7 +76,7 @@ CONTENTS:
 		pth = strings.Replace(pth, "\\", "/", -1)
 		skip := strings.TrimPrefix(pth, src)
 		for k := range config {
-			if (strings.HasSuffix(k, "/") && strings.HasPrefix(skip, k)) || skip == k {
+			if skip == strings.TrimSuffix(k, "/") || (strings.HasSuffix(k, "/") && strings.HasPrefix(skip, k)) || skip == k {
 				if !fi.IsDir() {
 					fmt.Printf("Skip: %s\n", skip)
 				}
