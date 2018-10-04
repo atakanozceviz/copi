@@ -10,6 +10,8 @@ import (
 )
 
 var settingsFile string
+var backupPath string
+var keep int
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -32,6 +34,12 @@ Copies files and folders from [source] to [destination]
 		src := args[0]
 		dest := args[1]
 
+		if backupPath != "" && keep >= 1 {
+			if err := copi.Backup(dest, backupPath, keep); err != nil {
+				panic(err)
+			}
+		}
+
 		if err := copi.Copy(src, dest, settingsFile); err != nil {
 			panic(err)
 		}
@@ -49,4 +57,6 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&settingsFile, "settings", "s", "copi.json", "path to settings file")
+	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "path to backup folder")
+	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to save")
 }
