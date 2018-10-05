@@ -2,6 +2,7 @@ package copi
 
 import (
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -14,7 +15,8 @@ func worker(job <-chan *Job, wg *sync.WaitGroup) {
 	for j := range job {
 		fmt.Printf("Copy: %s\n", j.Src)
 		if err := fcopy(j.Src, j.Dst); err != nil {
-			panic(err)
+			fmt.Printf("Error: cannot copy %s to %s: %v\n", j.Src, j.Dst, err)
+			os.Exit(1)
 		}
 	}
 }

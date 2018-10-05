@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-func Copy(src, dest, stp string) error {
+func Copy(src, dst, stp string) error {
 	contents, err := contentsToCopy(src, stp)
 	if err != nil {
 		return err
@@ -20,7 +20,7 @@ func Copy(src, dest, stp string) error {
 			continue
 		}
 		pth := strings.TrimPrefix(in, src)
-		dir := filepath.Join(dest, pth)
+		dir := filepath.Join(dst, pth)
 		fmt.Printf("Create: %s\n", dir)
 		if err = os.MkdirAll(dir, os.ModePerm); err != nil {
 			return err
@@ -45,7 +45,7 @@ func Copy(src, dest, stp string) error {
 			continue
 		}
 		pth := strings.TrimPrefix(in, src)
-		out := filepath.Join(dest, pth)
+		out := filepath.Join(dst, pth)
 		jobs <- &Job{
 			Src: in,
 			Dst: out,
@@ -102,7 +102,7 @@ func scanContents(dir string) (map[string]os.FileInfo, error) {
 	return contents, nil
 }
 
-func fcopy(src, dest string) (err error) {
+func fcopy(src, dst string) (err error) {
 	// Open src file
 	in, err := os.Open(src)
 	if err != nil {
@@ -110,7 +110,7 @@ func fcopy(src, dest string) (err error) {
 	}
 	defer in.Close()
 
-	out, err := os.Create(dest)
+	out, err := os.Create(dst)
 	if err != nil {
 		return
 	}
@@ -134,7 +134,7 @@ func fcopy(src, dest string) (err error) {
 	if err != nil {
 		return
 	}
-	err = os.Chmod(dest, si.Mode())
+	err = os.Chmod(dst, si.Mode())
 	if err != nil {
 		return
 	}

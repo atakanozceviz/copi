@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Backup(src, dest string, keep int) error {
+func Backup(src, dst string, keep int) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -19,15 +19,20 @@ func Backup(src, dest string, keep int) error {
 	if !filepath.IsAbs(src) {
 		src = filepath.Join(wd, src)
 	}
-	if !filepath.IsAbs(dest) {
-		dest = filepath.Join(wd, dest)
+	if !filepath.IsAbs(dst) {
+		dst = filepath.Join(wd, dst)
 	}
-	if err := cleanBackup(dest, keep); err != nil {
-		return err
+	if err := cleanBackup(dst, keep); err != nil {
+		return fmt.Errorf("cannot clean backup directory: %v", err)
 	}
 	now := strconv.FormatInt(time.Now().Unix(), 10)
-	dest = filepath.Join(dest, now+"-"+filepath.Base(src))
-	return copyDir(src, dest)
+	dst = filepath.Join(dst, now+"-"+filepath.Base(src))
+
+	err = copyDir(src, dst)
+	if err != nil {
+		return fmt.Errorf("cannot backup: %v", err)
+	}
+	return nil
 }
 
 // CopyFile copies the contents of the file named src to the file named
@@ -123,15 +128,14 @@ func copyDir(src string, dst string) (err error) {
 			}
 		}
 	}
-
 	return
 }
 
-func cleanBackup(dest string, keep int) error {
+func cleanBackup(dst string, keep int) error {
 	re := regexp.MustCompile(`^[0-9]{10}-.+`)
 	backups := make([]os.FileInfo, 0, 5)
 
-	entries, err := ioutil.ReadDir(dest)
+	entries, err := ioutil.ReadDir(dst)
 	if err != nil {
 		return err
 	}
@@ -142,7 +146,7 @@ func cleanBackup(dest string, keep int) error {
 	}
 	count := len(backups)
 	for i := 0; count >= keep; i++ {
-		err := os.RemoveAll(filepath.Join(dest, backups[i].Name()))
+		err := os.RemoveAll(filepath.Join(dst, backups[i].Name()))
 		if err != nil {
 			return err
 		}

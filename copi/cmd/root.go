@@ -16,7 +16,7 @@ var keep int
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "copi",
-	Short: "Copy files and folders except specified in settings",
+	Short: "Copy files and folders except specified in the settings",
 	Long: `Usage:
 copi [source] [destination]
 
@@ -32,15 +32,15 @@ Copies files and folders from [source] to [destination]
 			args[i] = v
 		}
 		src := args[0]
-		dest := args[1]
+		dst := args[1]
 
 		if backupPath != "" && keep >= 1 {
-			if err := copi.Backup(dest, backupPath, keep); err != nil {
+			if err := copi.Backup(dst, backupPath, keep); err != nil {
 				panic(err)
 			}
 		}
 
-		if err := copi.Copy(src, dest, settingsFile); err != nil {
+		if err := copi.Copy(src, dst, settingsFile); err != nil {
 			panic(err)
 		}
 	},
@@ -56,7 +56,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&settingsFile, "settings", "s", "copi.json", "path to settings file")
-	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "path to backup folder")
-	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to save")
+	rootCmd.PersistentFlags().StringVarP(&settingsFile, "settings", "s", "copi.json", "filesystem path to settings file")
+	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "filesystem path to backup folder")
+	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to keep")
 }
