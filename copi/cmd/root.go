@@ -35,13 +35,16 @@ Copies files and folders from [source] to [destination]
 		dst := args[1]
 
 		if backupPath != "" && keep >= 1 {
+			fmt.Printf("Backup: %s\n", dst)
 			if err := copi.Backup(dst, backupPath, keep); err != nil {
-				panic(err)
+				fmt.Printf("Cannot backup: %v\n", err)
+				os.Exit(1)
 			}
 		}
 
 		if err := copi.Copy(src, dst, settingsFile); err != nil {
-			panic(err)
+			fmt.Printf("Cannot copy: %v\n", err)
+			os.Exit(1)
 		}
 	},
 }
