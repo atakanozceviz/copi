@@ -22,7 +22,7 @@ func Backup(src, dst string, keep int) error {
 	if !filepath.IsAbs(dst) {
 		dst = filepath.Join(wd, dst)
 	}
-	if err := cleanBackup(dst, keep); err != nil {
+	if err := cleanBackupDir(filepath.Base(src), dst, keep); err != nil {
 		return fmt.Errorf("cannot clean backup directory: %v", err)
 	}
 	now := strconv.FormatInt(time.Now().Unix(), 10)
@@ -131,8 +131,8 @@ func copyDir(src string, dst string) (err error) {
 	return
 }
 
-func cleanBackup(dst string, keep int) error {
-	re := regexp.MustCompile(`^[0-9]{10}-.+`)
+func cleanBackupDir(name, dst string, keep int) error {
+	re := regexp.MustCompile(`^[0-9]{10}-` + name)
 	backups := make([]os.FileInfo, 0, 5)
 
 	entries, err := ioutil.ReadDir(dst)
