@@ -43,10 +43,6 @@ Copies files and folders from [source] to [destination]
 			args[i] = arg
 		}
 
-		if backupPath != "" && !path.IsAbs(backupPath) {
-			backupPath = path.Clean(path.Join(wd, backupPath))
-		}
-
 		list, err := copi.ParseSettings(settingsFile)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
@@ -56,17 +52,24 @@ Copies files and folders from [source] to [destination]
 		src := args[0]
 		dst := args[1]
 
-		backupPath = strings.Replace(backupPath, "\\", "/", -1)
-		err = copi.Backup(dst, backupPath, keep)
-		if err != nil {
-			fmt.Printf("Cannot backup: %v\n", err)
-			os.Exit(1)
+		if backupPath != "" {
+			backupPath = strings.Replace(backupPath, "\\", "/", -1)
+			if !path.IsAbs(backupPath) {
+				backupPath = path.Clean(path.Join(wd, backupPath))
+			}
+			err = copi.Backup(dst, backupPath, keep)
+			if err != nil {
+				fmt.Printf("Cannot backup: %v\n", err)
+				os.Exit(1)
+			}
 		}
 
-		err = copi.RemoveContentsExcept(dst, list)
-		if err != nil {
-			fmt.Printf("Cannot remove contents: %v\n", err)
-			os.Exit(1)
+		if remove {
+			err = copi.RemoveContentsExcept(dst, list)
+			if err != nil {
+				fmt.Printf("Cannot remove contents: %v\n", err)
+				os.Exit(1)
+			}
 		}
 
 		err = copi.CopyContentsExcept(src, dst, list)
@@ -90,5 +93,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&settingsFile, "settings", "s", "", "filesystem path to settings file")
 	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "filesystem path to backup folder")
 	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to keep")
-	rootCmd.PersistentFlags().BoolVarP(&remove, "delete", "r", true, "remove destination contents")
+	rootCmd.PersistentFlags().BoolVarP(&remove, "remove", "r", true, "remove destination contents")
 }
