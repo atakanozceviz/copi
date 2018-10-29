@@ -56,11 +56,7 @@ Copies files and folders from [source] to [destination]
 		src := args[0]
 		dst := args[1]
 
-		fmt.Println("src: ", src)
-		fmt.Println("dst: ", dst)
-		fmt.Println("backupPath: ", backupPath)
-		fmt.Println("keep", keep)
-
+		backupPath = strings.Replace(backupPath, "\\", "/", -1)
 		err = copi.Backup(dst, backupPath, keep)
 		if err != nil {
 			fmt.Printf("Cannot backup: %v\n", err)

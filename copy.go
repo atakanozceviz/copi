@@ -40,11 +40,11 @@ func CopyContentsExcept(src, dst string, list map[string]struct{}) error {
 
 		if !info.IsDir() {
 			fmt.Printf("Copy: %s\n", path)
-			err := os.MkdirAll(filepath.Dir(filepath.Join(dst, strings.TrimPrefix(path, src))), os.ModePerm)
+			err := os.MkdirAll(filepath.Dir(filepath.Join(dst, strings.TrimPrefix(upath, src))), os.ModePerm)
 			if err != nil {
 				return err
 			}
-			err = copyFile(path, filepath.Join(dst, strings.TrimPrefix(path, src)))
+			err = copyFile(path, filepath.Join(dst, strings.TrimPrefix(upath, src)))
 			if err != nil {
 				return err
 			}
