@@ -12,6 +12,7 @@ import (
 var settingsFile string
 var backupPath string
 var keep int
+var remove bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -24,12 +25,12 @@ Copies files and folders from [source] to [destination]
 `,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		for i, v := range args {
-			v = strings.Replace(v, "\\", "/", -1)
-			if !strings.HasSuffix(v, "/") {
-				v = v + "/"
+		for i, arg := range args {
+			arg = strings.Replace(arg, "\\", "/", -1)
+			if !strings.HasSuffix(arg, "/") {
+				arg = arg + "/"
 			}
-			args[i] = v
+			args[i] = arg
 		}
 		src := args[0]
 		dst := args[1]
@@ -38,6 +39,13 @@ Copies files and folders from [source] to [destination]
 			fmt.Printf("Backup: %s\n", dst)
 			if err := copi.Backup(dst, backupPath, keep); err != nil {
 				fmt.Printf("Cannot backup: %v\n", err)
+				os.Exit(1)
+			}
+		}
+
+		if remove {
+			if err := copi.RemoveContents(dst, settingsFile); err != nil {
+				fmt.Printf("Cannot remove contents: %v\n", err)
 				os.Exit(1)
 			}
 		}
@@ -62,4 +70,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&settingsFile, "settings", "s", "", "filesystem path to settings file")
 	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "filesystem path to backup folder")
 	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to keep")
+	rootCmd.PersistentFlags().BoolVarP(&remove, "delete", "r", true, "remove destination contents")
 }

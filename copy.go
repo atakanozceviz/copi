@@ -94,6 +94,9 @@ func scanContents(dir string) (map[string]os.FileInfo, error) {
 		if err != nil {
 			return err
 		}
+		if info.IsDir() && info.Name() == filepath.Base(dir) {
+			return nil
+		}
 		contents[path] = info
 		return nil
 	}); err != nil {
