@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/atakanozceviz/copi"
@@ -25,32 +26,55 @@ Copies files and folders from [source] to [destination]
 `,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		wd, err := os.Getwd()
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+
 		for i, arg := range args {
+			if !path.IsAbs(arg) {
+				arg = path.Clean(path.Join(wd, arg))
+			}
 			arg = strings.Replace(arg, "\\", "/", -1)
 			if !strings.HasSuffix(arg, "/") {
 				arg = arg + "/"
 			}
 			args[i] = arg
 		}
+
+		if backupPath != "" && !path.IsAbs(backupPath) {
+			backupPath = path.Clean(path.Join(wd, backupPath))
+		}
+
+		list, err := copi.ParseSettings(settingsFile)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+
 		src := args[0]
 		dst := args[1]
 
-		if backupPath != "" && keep >= 1 {
-			fmt.Printf("Backup: %s\n", dst)
-			if err := copi.Backup(dst, backupPath, keep); err != nil {
-				fmt.Printf("Cannot backup: %v\n", err)
-				os.Exit(1)
-			}
+		fmt.Println("src: ", src)
+		fmt.Println("dst: ", dst)
+		fmt.Println("backupPath: ", backupPath)
+		fmt.Println("keep", keep)
+
+		err = copi.Backup(dst, backupPath, keep)
+		if err != nil {
+			fmt.Printf("Cannot backup: %v\n", err)
+			os.Exit(1)
 		}
 
-		if remove {
-			if err := copi.RemoveContents(dst, settingsFile); err != nil {
-				fmt.Printf("Cannot remove contents: %v\n", err)
-				os.Exit(1)
-			}
+		err = copi.RemoveContentsExcept(dst, list)
+		if err != nil {
+			fmt.Printf("Cannot remove contents: %v\n", err)
+			os.Exit(1)
 		}
 
-		if err := copi.Copy(src, dst, settingsFile); err != nil {
+		err = copi.CopyContentsExcept(src, dst, list)
+		if err != nil {
 			fmt.Printf("Cannot copy: %v\n", err)
 			os.Exit(1)
 		}

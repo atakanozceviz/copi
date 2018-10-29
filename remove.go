@@ -3,93 +3,45 @@ package copi
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-func RemoveContents(dst, stp string) error {
-	config, err := parseSettings(stp)
-	if err != nil {
-		return err
-	}
+func RemoveContentsExcept(dst string, list map[string]struct{}) error {
+	filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if info.IsDir() && filepath.Base(dst) == info.Name() {
+			return nil
+		}
 
-	srcContents, err := scanContents(dst)
-	if err != nil {
-		return err
-	}
+		upath := strings.Replace(path, "\\", "/", -1)
+		skip := strings.Replace(upath, dst, "", -1)
 
-CONTENTS:
-	for pth, fi := range srcContents {
-		pth = strings.Replace(pth, "\\", "/", -1)
-		skip := strings.TrimPrefix(pth, dst)
-		for k := range config {
-			if skip == strings.TrimSuffix(k, "/") || (strings.HasSuffix(k, "/") && strings.HasPrefix(skip, k)) || skip == k {
-				continue CONTENTS
+		if info.IsDir() {
+			if _, ok := list[skip+"/"]; ok {
+				return filepath.SkipDir
+			}
+		}
+		if _, ok := list[skip]; ok {
+			return nil
+		}
+		for k := range list {
+			if strings.HasSuffix(k, "/") && strings.HasPrefix(k, skip+"/") {
+				return nil
 			}
 		}
 
-		// fmt.Printf("Remove: %s\n", pth)
-		// err := os.RemoveAll(pth)
-		// if err != nil {
-		// 	return err
-		// }
-		// TODO: cannot remove folders, leaves empty folders
-		if !fi.IsDir() {
-			fmt.Printf("Remove: %s\n", pth)
-			err := os.Remove(pth)
-			if err != nil {
-				return err
-			}
-			continue
+		fmt.Printf("Remove: %s\n", path)
+		err = os.RemoveAll(path)
+		if err != nil {
+			return err
 		}
-	}
+		return nil
+	})
 	return nil
 }
-
-// func RemoveContents(dst, stp string) error {
-// 	config, err := parseSettings(stp)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if err := filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
-// 		if os.IsNotExist(err) {
-// 			return nil
-// 		}
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		if info.IsDir() && info.Name() == filepath.Base(dst) {
-// 			return nil
-// 		}
-// 		path = strings.Replace(path, "\\", "/", -1)
-// 		if info.IsDir() {
-// 			for skip := range config {
-// 				skip := strings.TrimPrefix(skip, dst)
-// 				if strings.HasSuffix(skip, "/") && strings.TrimSuffix(skip, "/") == info.Name() || path == skip {
-// 					fmt.Printf("Skip Dir: %s\n", path)
-// 					return filepath.SkipDir
-// 				}
-// 				if strings.HasSuffix(skip, "/") && strings.HasPrefix(skip, info.Name()) {
-// 					fmt.Printf("Skip Dir: %s\n", path)
-// 					return nil
-// 				}
-// 				continue
-// 			}
-// 		}
-
-// 		for skip := range config {
-// 			if !strings.HasSuffix(skip, "/") && filepath.Base(skip) == info.Name() {
-// 				fmt.Printf("Skip File: %s\n", path)
-// 				return nil
-// 			}
-// 			continue
-// 		}
-// 		fmt.Printf("Remove: %s\n", path)
-// 		return os.RemoveAll(path)
-// 	}); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }

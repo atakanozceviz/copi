@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func parseSettings(pth string) (map[string]struct{}, error) {
+func ParseSettings(pth string) (map[string]struct{}, error) {
 	conf := make(map[string]struct{})
 	if pth == "" {
 		return conf, nil

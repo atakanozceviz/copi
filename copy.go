@@ -3,110 +3,65 @@ package copi
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 )
 
-func Copy(src, dst, stp string) error {
-	contents, err := contentsToCopy(src, stp)
-	if err != nil {
-		return err
-	}
-	// Create folders
-	for in, fi := range contents {
-		if !fi.IsDir() {
-			continue
+func CopyContentsExcept(src, dst string, list map[string]struct{}) error {
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if os.IsNotExist(err) {
+			return nil
 		}
-		pth := strings.TrimPrefix(in, src)
-		dir := filepath.Join(dst, pth)
-		fmt.Printf("Create: %s\n", dir)
-		if err = os.MkdirAll(dir, os.ModePerm); err != nil {
-			return err
-		}
-	}
-
-	wg := &sync.WaitGroup{}
-	jobs := make(chan *Job)
-	workerCount := len(contents)
-	if workerCount > 500 {
-		workerCount = 500
-	}
-
-	for i := 0; i < workerCount; i++ {
-		wg.Add(1)
-		go worker(jobs, wg)
-	}
-
-	// Copy files
-	for in, fi := range contents {
-		if fi.IsDir() {
-			continue
-		}
-		pth := strings.TrimPrefix(in, src)
-		out := filepath.Join(dst, pth)
-		jobs <- &Job{
-			Src: in,
-			Dst: out,
-		}
-		//if err := fcopy(in, out); err != nil {
-		//	return err
-		//}
-	}
-	close(jobs)
-	wg.Wait()
-	return nil
-}
-
-func contentsToCopy(src, stp string) (map[string]os.FileInfo, error) {
-	config, err := parseSettings(stp)
-	if err != nil {
-		return nil, err
-	}
-
-	srcContents, err := scanContents(src)
-	if err != nil {
-		return nil, err
-	}
-
-	contentsToCopy := make(map[string]os.FileInfo)
-CONTENTS:
-	for pth, fi := range srcContents {
-		pth = strings.Replace(pth, "\\", "/", -1)
-		skip := strings.TrimPrefix(pth, src)
-		for k := range config {
-			if skip == strings.TrimSuffix(k, "/") || (strings.HasSuffix(k, "/") && strings.HasPrefix(skip, k)) || skip == k {
-				if !fi.IsDir() {
-					fmt.Printf("Skip: %s\n", skip)
-				}
-				continue CONTENTS
-			}
-		}
-		contentsToCopy[pth] = fi
-	}
-	return contentsToCopy, nil
-}
-
-func scanContents(dir string) (map[string]os.FileInfo, error) {
-	contents := make(map[string]os.FileInfo)
-	if err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() && info.Name() == filepath.Base(dir) {
+		if info.IsDir() && filepath.Base(src) == info.Name() {
 			return nil
 		}
-		contents[path] = info
+
+		upath := strings.Replace(path, "\\", "/", -1)
+		skip := strings.Replace(upath, src, "", -1)
+
+		if info.IsDir() {
+			if _, ok := list[skip+"/"]; ok {
+				return filepath.SkipDir
+			}
+		}
+		if _, ok := list[skip]; ok {
+			return nil
+		}
+		for k := range list {
+			if strings.HasSuffix(k, "/") && strings.HasPrefix(k, skip+"/") {
+				return nil
+			}
+		}
+
+		if !info.IsDir() {
+			fmt.Printf("Copy: %s\n", path)
+			err := os.MkdirAll(filepath.Dir(filepath.Join(dst, strings.TrimPrefix(path, src))), os.ModePerm)
+			if err != nil {
+				return err
+			}
+			err = copyFile(path, filepath.Join(dst, strings.TrimPrefix(path, src)))
+			if err != nil {
+				return err
+			}
+		}
 		return nil
-	}); err != nil {
-		return nil, err
+	})
+	if err != nil {
+		return err
 	}
-	return contents, nil
+	return nil
 }
 
-func fcopy(src, dst string) (err error) {
-	// Open src file
+// copyFile copies the contents of the file named src to the file named
+// by dst. The file will be created if it does not already exist. If the
+// destination file exists, all it's contents will be replaced by the contents
+// of the source file. The file mode will be copied from the source.
+func copyFile(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return
@@ -128,11 +83,6 @@ func fcopy(src, dst string) (err error) {
 		return
 	}
 
-	err = out.Sync()
-	if err != nil {
-		return
-	}
-
 	si, err := os.Stat(src)
 	if err != nil {
 		return
@@ -141,6 +91,62 @@ func fcopy(src, dst string) (err error) {
 	if err != nil {
 		return
 	}
+	return
+}
 
+// copyDir recursively copies a directory tree, attempting to preserve permissions.
+// Source directory must exist, destination directory must *not* exist.
+// Symlinks are ignored and skipped.
+func copyDir(src string, dst string) (err error) {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !si.IsDir() {
+		return fmt.Errorf("source is not a directory")
+	}
+
+	_, err = os.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return
+	}
+	if err == nil {
+		return fmt.Errorf("destination already exists")
+	}
+
+	err = os.MkdirAll(dst, si.Mode())
+	if err != nil {
+		return
+	}
+
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = copyDir(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		} else {
+			// Skip symlinks.
+			if entry.Mode()&os.ModeSymlink != 0 {
+				continue
+			}
+
+			err = copyFile(srcPath, dstPath)
+			if err != nil {
+				return
+			}
+		}
+	}
 	return
 }
