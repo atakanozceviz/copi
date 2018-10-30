@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var settingsFile string
+var ignoreList string
 var backupPath string
 var keep int
 var remove bool
@@ -43,7 +43,7 @@ Copies files and folders from [source] to [destination]
 			args[i] = arg
 		}
 
-		list, err := copi.ParseSettings(settingsFile)
+		list, err := copi.ParseIgnore(ignoreList)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
@@ -90,7 +90,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&settingsFile, "settings", "s", "", "filesystem path to settings file")
+	rootCmd.PersistentFlags().StringVarP(&ignoreList, "ignore", "s", "", "filesystem path to list of files and folders to ignore") // TODO: Change shorthand form s to i.(BREAKS EVERYTHING!)
 	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "filesystem path to backup folder")
 	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to keep")
 	rootCmd.PersistentFlags().BoolVarP(&remove, "remove", "r", true, "remove destination contents")
