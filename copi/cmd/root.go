@@ -18,7 +18,7 @@ var remove bool
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "copi",
-	Short: "Copy files and folders except specified in the settings",
+	Short: "Copy files and folders except specified in the ignore list",
 	Long: `Usage:
 copi [source] [destination]
 

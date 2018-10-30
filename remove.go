@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// RemoveContentsExcept specified in the list of files and folders to ignore
 func RemoveContentsExcept(dst string, list map[string]struct{}) error {
 	err := filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {

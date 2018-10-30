@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// ParseIgnore file
 func ParseIgnore(pth string) (map[string]struct{}, error) {
 	conf := make(map[string]struct{})
 	if pth == "" {

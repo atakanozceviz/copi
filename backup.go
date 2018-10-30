@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Backup things from src to dst
 func Backup(src, dst string, keep int) error {
 	if err := cleanBackupDir(filepath.Base(src), dst, keep); err != nil {
 		return err
