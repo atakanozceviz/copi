@@ -33,7 +33,7 @@ func CopyContentsExcept(src, dst string, list map[string]struct{}) error {
 			return nil
 		}
 		for k := range list {
-			if strings.HasSuffix(k, "/") && strings.HasPrefix(k, skip+"/") {
+			if strings.HasPrefix(k, skip+"/") {
 				return nil
 			}
 		}
