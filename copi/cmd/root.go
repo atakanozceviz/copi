@@ -11,6 +11,7 @@ import (
 )
 
 var ignoreList string
+var transformList string
 var backupPath string
 var keep int
 var remove bool
@@ -77,6 +78,20 @@ Copies files and folders from [source] to [destination]
 			fmt.Printf("Cannot copy: %v\n", err)
 			os.Exit(1)
 		}
+
+		if transformList != "" {
+			tl, err := copi.ParseTransform(transformList)
+			if err != nil {
+				fmt.Printf("Cannot parse transform list: %v\n", err)
+				os.Exit(1)
+			}
+
+			err = copi.Transform(dst, tl)
+			if err != nil {
+				fmt.Printf("Cannot transform: %v\n", err)
+				os.Exit(1)
+			}
+		}
 	},
 }
 
@@ -91,6 +106,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&ignoreList, "ignore", "s", "", "filesystem path to list of files and folders to ignore") // TODO: Change shorthand form s to i.(BREAKS EVERYTHING!)
+	rootCmd.PersistentFlags().StringVarP(&transformList, "transform", "t", "", "filesystem path to list of files to transform")
 	rootCmd.PersistentFlags().StringVarP(&backupPath, "backup", "b", "", "filesystem path to backup folder")
 	rootCmd.PersistentFlags().IntVarP(&keep, "keep", "k", 3, "number of backups to keep")
 	rootCmd.PersistentFlags().BoolVarP(&remove, "remove", "r", true, "remove destination contents")
