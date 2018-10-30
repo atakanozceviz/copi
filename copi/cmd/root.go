@@ -54,10 +54,6 @@ Copies files and folders from [source] to [destination]
 		dst := args[1]
 
 		if backupPath != "" {
-			backupPath = strings.Replace(backupPath, "\\", "/", -1)
-			if !path.IsAbs(backupPath) {
-				backupPath = path.Clean(path.Join(wd, backupPath))
-			}
 			err = copi.Backup(dst, backupPath, keep)
 			if err != nil {
 				fmt.Printf("Cannot backup: %v\n", err)

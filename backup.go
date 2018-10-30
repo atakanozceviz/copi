@@ -19,10 +19,10 @@ func Backup(src, dst string, keep int) error {
 	now := strconv.FormatInt(time.Now().Unix(), 10)
 	dst = filepath.Join(dst, now+"-"+filepath.Base(src))
 
-	fmt.Printf("Backup: %s\n", src)
+	fmt.Printf("Backup: %s\n", dst)
 	err := copyDir(src, dst)
 	if err != nil {
-		return fmt.Errorf("cannot backup: %v", err)
+		return fmt.Errorf("cannot copy directory: %v", err)
 	}
 	return nil
 }
