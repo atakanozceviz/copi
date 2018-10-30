@@ -8,7 +8,7 @@ import (
 )
 
 func RemoveContentsExcept(dst string, list map[string]struct{}) error {
-	filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dst, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {
 			return nil
 		}
@@ -43,5 +43,8 @@ func RemoveContentsExcept(dst string, list map[string]struct{}) error {
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	return nil
 }
