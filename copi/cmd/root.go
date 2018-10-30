@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/atakanozceviz/copi"
@@ -34,8 +34,8 @@ Copies files and folders from [source] to [destination]
 		}
 
 		for i, arg := range args {
-			if !path.IsAbs(arg) {
-				arg = path.Clean(path.Join(wd, arg))
+			if !filepath.IsAbs(arg) {
+				arg = filepath.Clean(filepath.Join(wd, arg))
 			}
 			arg = strings.Replace(arg, "\\", "/", -1)
 			if !strings.HasSuffix(arg, "/") {
@@ -54,6 +54,9 @@ Copies files and folders from [source] to [destination]
 		dst := args[1]
 
 		if backupPath != "" {
+			if !filepath.IsAbs(backupPath) {
+				backupPath = filepath.Clean(filepath.Join(wd, backupPath))
+			}
 			err = copi.Backup(dst, backupPath, keep)
 			if err != nil {
 				fmt.Printf("Cannot backup: %v\n", err)
