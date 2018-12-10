@@ -30,7 +30,7 @@ Features:
 - Can ignore the files and folders described in the list.
 - Can transform the files described in the list.
 `,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -49,14 +49,20 @@ Features:
 			args[i] = arg
 		}
 
-		list, err := copi.ParseIgnore(ignoreList)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
+		src := ""
+		dst := ""
+		switch len(args) {
+		case 1:
+			dst = args[0]
+		case 2:
+			src = args[0]
+			dst = args[1]
 		}
 
-		src := args[0]
-		dst := args[1]
+		if src == "" && backupPath == "" {
+			fmt.Println("Please provide backup path.")
+			os.Exit(1)
+		}
 
 		if backupPath != "" {
 			if !filepath.IsAbs(backupPath) {
@@ -67,6 +73,15 @@ Features:
 				fmt.Printf("Cannot backup: %v\n", err)
 				os.Exit(1)
 			}
+			if src == "" {
+				os.Exit(0)
+			}
+		}
+
+		list, err := copi.ParseIgnore(ignoreList)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
 		}
 
 		if remove {
