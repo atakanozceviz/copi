@@ -20,10 +20,15 @@ var remove bool
 var rootCmd = &cobra.Command{
 	Use:   "copi",
 	Short: "Copy files and folders except specified in the ignore list",
-	Long: `Usage:
+	Long: `
 copi [source] [destination]
 
 Copies files and folders from [source] to [destination]
+
+Features:
+- Can backup [destination] to other location. (Default keeps 3 backups)
+- Can ignore the files and folders described in the list.
+- Can transform the files described in the list.
 `,
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
